@@ -313,20 +313,26 @@ export default function retrieve(resource?: vscode.Uri | ToolingTypes) {
                                 const resFN: string = metaName.slice(metaName.indexOf(path.sep) + 1).split('.')[0];
                                 var zipFilePath: string = path.join(destDir, 'resource-bundles', resFN + '.resource.' + ctFolderName);
                                 if (ContentType.includes('gzip')) {
-                                    compress.gzip.uncompress(actualResData, zipFilePath);
+                                    compress.gzip.uncompress(actualResData, zipFilePath)
+                                        .catch(reject);
                                 } else if (ContentType.includes('zip')) {
-                                    compress.zip.uncompress(actualResData, zipFilePath);
+                                    compress.zip.uncompress(actualResData, zipFilePath)
+                                        .catch(reject);
                                 } else {
                                     // this will work for most other things...
-                                    var theData: any;
-                                    if (ContentType.includes('image') || ContentType.includes('shockwave-flash')) {
-                                        theData = new Buffer(actualResData.toString('base64'), 'base64');
-                                    } else {
-                                        theData = actualResData.toString(mime.charset(ContentType) || 'UTF-8');
+                                    try {
+                                        var theData: any;
+                                        if (ContentType.includes('image') || ContentType.includes('shockwave-flash')) {
+                                            theData = new Buffer(actualResData.toString('base64'), 'base64');
+                                        } else {
+                                            theData = actualResData.toString(mime.charset(ContentType) || 'UTF-8');
+                                        }
+                                        var ext = mime.extension(ContentType);
+                                        var filePath: string = path.join(destDir, 'resource-bundles', resFN + '.resource.' + ctFolderName, resFN + '.' + ext);
+                                        fs.outputFileSync(filePath, theData);
+                                    } catch (e) {
+                                        reject(e);
                                     }
-                                    var ext = mime.extension(ContentType);
-                                    var filePath: string = path.join(destDir, 'resource-bundles', resFN + '.resource.' + ctFolderName, resFN + '.' + ext);
-                                    fs.outputFileSync(filePath, theData);
                                 }
                             }
                         });
